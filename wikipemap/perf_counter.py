@@ -58,11 +58,11 @@ class PerformanceCounter:
 
         for metric_name, metric in cls.metric.items():
             res += (
-                "{:15}{:17.7}{:17.7}{:17.7}\n".format(
+                "{:15}{:17}{:17e}{:17e}\n".format(
                     metric_name,
-                    str(metric["n_values"]),
-                    str(metric["max_value"]),
-                    str(metric["mean_value"]),
+                    metric["n_values"],
+                    metric["max_value"],
+                    metric["mean_value"],
                 )
                 + os.linesep
                 + "_" * 66

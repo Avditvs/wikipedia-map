@@ -15,7 +15,7 @@ def get_page_links(parser):
         h = a.get("href")
         if h is not None:
             h = urlparse.unquote(h)
-            if not ":" in h and re.match("^/wiki/.*", h):
+            if not "#" in h and not ":" in h and re.match("^/wiki/.*", h):
                 links.append(h.split("/")[2])
     return links
 
