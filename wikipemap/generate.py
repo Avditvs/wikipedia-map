@@ -17,3 +17,8 @@ def explore(wmap, page_name, page_vertex, depth=10):
     if depth > 0:
         for neighbor in wmap.get_neighbors(page_vertex, visited=False):
             explore(wmap, neighbor["name"], neighbor, depth - 1)
+
+
+def start_exploring(graph, page_name, depth=3):
+    page_vertex = graph.add_page(page_name)
+    explore(graph, page_name, page_vertex, depth=depth)
