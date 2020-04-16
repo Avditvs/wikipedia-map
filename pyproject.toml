@@ -7,8 +7,10 @@ authors = ["Germain Louis <germain.louis.80@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 beautifulsoup4 = "^4.9.0"
+python-igraph = "^0.8.0"
 
 [tool.poetry.dev-dependencies]
+jupyterlab = "^2.1.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
