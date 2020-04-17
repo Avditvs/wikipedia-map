@@ -17,8 +17,8 @@ class WikipediaMap:
         if self.verbose is True:
             clear_output()
             display(
-                "Explored pages : {}, last : {}".format(
-                    self.explored_pages, page_name
+                "Explored pages :{}, Registered pages :{}, Last : {}".format(
+                    self.explored_pages, len(self.graph.vs), page_name
                 )
             )
 

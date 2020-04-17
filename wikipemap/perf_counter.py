@@ -1,5 +1,6 @@
 import time
 import os
+from collections import deque
 
 
 class PerformanceCounter:
@@ -14,6 +15,8 @@ class PerformanceCounter:
                 "n_values": 0,
                 "max_value": 0,
                 "mean_value": 0,
+                "last": deque(maxlen=10),
+                "mean_last": 0,
             }
 
     @classmethod
@@ -39,6 +42,13 @@ class PerformanceCounter:
                 + cls.metric[metric]["current_time"]
             ) / cls.metric[metric]["n_values"]
 
+            cls.metric[metric]["last"].append(
+                cls.metric[metric]["current_time"]
+            )
+            cls.metric[metric]["mean_last"] = sum(
+                cls.metric[metric]["last"]
+            ) / len(cls.metric[metric]["last"])
+
     @classmethod
     def start_metric(cls, metric):
         if metric in cls.metrics:
@@ -47,25 +57,30 @@ class PerformanceCounter:
     @classmethod
     def summary(cls):
         res = "Summary of metrics" + os.linesep
-        res += "_" * 66 + os.linesep
+        res += "_" * 92 + os.linesep
         res += (
-            "{:15}{:17}{:17}{:17}".format(
-                "Metric", "Nb. values", "Max. value (s)", "Mean value (s)"
+            "{:20}{:17}{:17}{:17}{:17}".format(
+                "Metric",
+                "Nb. values",
+                "Max. value (s)",
+                "Mean value (s)",
+                "Mean value (10 lasts)",
             )
             + os.linesep
         )
-        res += "=" * 66 + os.linesep
+        res += "=" * 92 + os.linesep
 
         for metric_name, metric in cls.metric.items():
             res += (
-                "{:15}{:17}{:17e}{:17e}\n".format(
+                "{:20}{:17}{:17e}{:17e}{:17e}\n".format(
                     metric_name,
                     metric["n_values"],
                     metric["max_value"],
                     metric["mean_value"],
+                    metric["mean_last"],
                 )
                 + os.linesep
-                + "_" * 66
+                + "_" * 92
                 + os.linesep
             )
 

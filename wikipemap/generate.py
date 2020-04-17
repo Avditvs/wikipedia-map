@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from wikipemap.perf_counter import PerformanceCounter
 
 
-def explore(wmap, page_name, page_vertex, depth=10):
+def explore(wmap, page_name, page_vertex, depth=10, duplicate=False):
     if page_vertex['visited'] is False:
         PerformanceCounter.start_metric("get")
         url = page.make_request_url(page_name, "fr")
@@ -12,15 +12,17 @@ def explore(wmap, page_name, page_vertex, depth=10):
         PerformanceCounter.end_metric("get")
         PerformanceCounter.start_metric("parse")
         parser = BeautifulSoup(html_page, "html.parser")
+        links = page.get_page_links(parser, duplicate)
         PerformanceCounter.end_metric("parse")
         wmap.set_visited(page_vertex)
-        links = page.get_page_links(parser)
+        PerformanceCounter.start_metric("create_linked_pages")
         for link in links:
             link_vertex = wmap.get_node(link)
             if not link_vertex:
                 link_vertex = wmap.add_page(link)
             wmap.add_link(page_vertex, link_vertex)
         wmap.page_explored(page_name)
+        PerformanceCounter.end_metric("create_linked_pages")
         if depth > 0:
             for neighbor in wmap.get_neighbors(page_vertex, visited=False):
                 explore(
