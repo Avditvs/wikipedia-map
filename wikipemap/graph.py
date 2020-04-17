@@ -4,13 +4,15 @@ from wikipemap.perf_counter import PerformanceCounter
 
 
 class WikipediaMap:
-    def __init__(self, name, verbose=True):
+    def __init__(self, name, verbose=True, use_lookup=True):
         self.graph = Graph(directed=True)
         self.name = name
         self.graph["name"] = name
         self.explored_pages = 0
         self.verbose = verbose
         self.created_links = 0
+        self.use_lookup = use_lookup
+        self.lookup_table = {}
 
     def page_explored(self, page_name):
         self.explored_pages += 1
@@ -25,6 +27,8 @@ class WikipediaMap:
     def add_page(self, page):
         PerformanceCounter.start_metric("add_page")
         res = self.graph.add_vertex(page, visited=False)
+        if self.use_lookup is True:
+            self.lookup_table[page] = res
         PerformanceCounter.end_metric("add_page")
         return res
 
@@ -34,10 +38,16 @@ class WikipediaMap:
 
     def get_node(self, name):
         PerformanceCounter.start_metric("get_node")
-        try:
-            vertex = self.graph.vs.find(name=name)
-        except ValueError:
-            vertex = None
+        if self.use_lookup is True:
+            if name in self.lookup_table:
+                vertex = self.lookup_table[name]
+            else:
+                vertex = None
+        else:
+            try:
+                vertex = self.graph.vs.find(name=name)
+            except ValueError:
+                vertex = None
         PerformanceCounter.end_metric("get_node")
         return vertex
 
