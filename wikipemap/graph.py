@@ -9,6 +9,7 @@ class WikipediaMap:
         self.name = name
         self.graph["name"] = name
         self.explored_pages = 0
+        self.registered_pages = 0
         self.verbose = verbose
         self.created_links = 0
         self.use_lookup = use_lookup
@@ -20,13 +21,14 @@ class WikipediaMap:
             clear_output()
             display(
                 "Explored pages :{}, Registered pages :{}, Last : {}".format(
-                    self.explored_pages, len(self.graph.vs), page_name
+                    self.explored_pages, self.registered_pages, page_name
                 )
             )
 
     def add_page(self, page):
         PerformanceCounter.start_metric("add_page")
         res = self.graph.add_vertex(page, visited=False)
+        self.registered_pages += 1
         if self.use_lookup is True:
             self.lookup_table[page] = res
         PerformanceCounter.end_metric("add_page")
