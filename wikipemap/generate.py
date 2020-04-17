@@ -2,6 +2,10 @@ import wikipemap.page as page
 import requests
 from wikipemap.perf_counter import PerformanceCounter
 from lxml import html
+from collections import deque
+
+DEPTH = 1
+RING = 0
 
 
 def explore(wmap, page_name, page_vertex, depth=10, duplicate=False):
@@ -18,6 +22,24 @@ def explore(wmap, page_name, page_vertex, depth=10, duplicate=False):
                 explore(
                     wmap, neighbor["name"], neighbor, depth=depth - 1,
                 )
+
+
+def explore_ring(wmap, queue, page_vertex, n_sites, duplicate=False):
+    n = 1
+    while len(queue) > 0 and n < n_sites:
+        link = queue.pop()
+        vertex = wmap.get_node(link)
+        if vertex['visited'] is False:
+            page_html = request_page(link)
+            PerformanceCounter.start_metric("parse")
+            parser = html.fromstring(page_html)
+            links = page.get_page_links(parser, duplicate)
+            PerformanceCounter.end_metric("parse")
+            n += 1
+            wmap.set_visited(vertex)
+            process_links(wmap, links, link, vertex)
+            for neighbor in wmap.get_neighbors(vertex, visited=False):
+                queue.append(neighbor["name"])
 
 
 def request_page(page_name):
@@ -39,6 +61,20 @@ def process_links(wmap, links, current_page_name, page_vertex):
     PerformanceCounter.end_metric("process_links")
 
 
-def start_exploring(graph, page_name, depth=3):
+def start_exploring(graph, page_name, depth=3, method=DEPTH, n_sites=200):
     page_vertex = graph.add_page(page_name)
-    explore(graph, page_name, page_vertex, depth=depth)
+    if method == DEPTH:
+        explore(graph, page_name, page_vertex, depth=depth)
+    elif method == RING:
+        queue = deque()
+        vertex = graph.get_node(page_name)
+        page_html = request_page(page_name)
+        PerformanceCounter.start_metric("parse")
+        parser = html.fromstring(page_html)
+        links = page.get_page_links(parser, False)
+        PerformanceCounter.end_metric("parse")
+        graph.set_visited(vertex)
+        process_links(graph, links, page_name, vertex)
+        for neighbor in graph.get_neighbors(vertex, visited=False):
+            queue.append(neighbor["name"])
+        explore_ring(graph, queue, vertex, n_sites)
