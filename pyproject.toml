@@ -8,6 +8,7 @@ authors = ["Germain Louis <germain.louis.80@gmail.com>"]
 python = "^3.8"
 beautifulsoup4 = "^4.9.0"
 python-igraph = "^0.8.0"
+lxml = "^4.5.0"
 
 [tool.poetry.dev-dependencies]
 jupyterlab = "^2.1.0"

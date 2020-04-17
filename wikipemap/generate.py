@@ -1,14 +1,14 @@
 import wikipemap.page as page
 import requests
-from bs4 import BeautifulSoup
 from wikipemap.perf_counter import PerformanceCounter
+from lxml import html
 
 
 def explore(wmap, page_name, page_vertex, depth=10, duplicate=False):
     if page_vertex["visited"] is False:
         html_page = request_page(page_name)
         PerformanceCounter.start_metric("parse")
-        parser = BeautifulSoup(html_page, "html.parser")
+        parser = html.fromstring(html_page)
         links = page.get_page_links(parser, duplicate)
         PerformanceCounter.end_metric("parse")
         wmap.set_visited(page_vertex)

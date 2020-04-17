@@ -2,6 +2,10 @@
 
 The goal of this project is to create a map of the wikipedia articles and how they are linked together.
 
+## External Dependancies:
+- libxml2
+- libxslt
+
 ## Todo
 - [x] Wikipedia web scraping
 - [x] Find a way to store extracted data
