@@ -4,6 +4,7 @@ import requests
 from lxml import html
 from wikipemap.perf_counter import PerformanceCounter
 from enum import Enum
+from igraph import OUT
 
 
 class State(Enum):
@@ -27,6 +28,14 @@ class Page:
         self.graph = graph
         self.vertex = graph.add_page(self)
 
+    @property
+    def visited(self):
+        return self.vertex["visited"]
+
+    @visited.setter
+    def visited(self, visited):
+        self.vertex["visited"] = visited
+
     @PerformanceCounter.timed("get")
     def make_request(self):
         self.state = State.FETCHING
@@ -40,8 +49,8 @@ class Page:
 
     @PerformanceCounter.timed("parse")
     def make_page_links(self):
-        parser = html.fromstring(self.content)
         self.state = State.PARSING
+        parser = html.fromstring(self.content)
         self.links = set()
         for h in parser.xpath(
             "//div[@id = '{}']//a/@href".format("mw-content-text")
@@ -62,8 +71,11 @@ class Page:
         self.graph.page_explored(self.link)
         self.state = State.COMPLETED
 
-    def set_visited(self):
-        self.vertex["visited"] = True
+    @PerformanceCounter.timed("get_neighbors")
+    def get_neighbors(self, visited=False):
+        neighbors = self.vertex.neighbors(mode=OUT)
+        neighbors = [n["page"] for n in neighbors if n["visited"] is visited]
+        return neighbors
 
     def enqueued(self, queue):
         if self.state != State.ENQUEUED:

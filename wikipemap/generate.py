@@ -6,15 +6,15 @@ RING = 0
 
 
 def explore(wmap, page, depth=10, duplicate=False):
-    if page.vertex["visited"] is False:
+    if page.visited is False:
         page.make_request()
         page.make_page_links()
-        page.set_visited()
         page.process_links()
+        page.visited = True
         if depth > 0:
-            for neighbor in wmap.get_neighbors(page, visited=False):
+            for neighbor in page.get_neighbors(visited=False):
                 explore(
-                    wmap, neighbor["page"], depth=depth - 1,
+                    wmap, neighbor, depth=depth - 1,
                 )
 
 
@@ -22,15 +22,14 @@ def explore_ring(queue, page, n_sites, duplicate=False):
     n = 1
     while len(queue) > 0 and n < n_sites:
         link = queue.pop()
-        if link.vertex["visited"] is False:
+        if link.visited is False:
             link.make_request()
             link.make_page_links()
             n += 1
-            link.set_visited()
             link.process_links()
-            for neighbor in link.graph.get_neighbors(link, visited=False):
-                page = neighbor["page"]
-                page.enqueued(queue)
+            link.visited = True
+            for neighbor in link.get_neighbors(visited=False):
+                neighbor.enqueued(queue)
 
 
 def start_exploring(graph, page_name, depth=3, method=DEPTH, n_sites=200):
@@ -42,8 +41,8 @@ def start_exploring(graph, page_name, depth=3, method=DEPTH, n_sites=200):
         page = Page(page_name, graph)
         page.make_request()
         page.make_page_links()
-        page.set_visited()
         page.process_links()
-        for neighbor in graph.get_neighbors(page, visited=False):
-            queue.append(neighbor["page"])
+        page.visited = True
+        for neighbor in page.get_neighbors(visited=False):
+            queue.append(neighbor)
         explore_ring(queue, page, n_sites)
