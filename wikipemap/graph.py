@@ -27,10 +27,10 @@ class WikipediaMap:
 
     def add_page(self, page):
         PerformanceCounter.start_metric("add_page")
-        res = self.graph.add_vertex(page, visited=False)
+        res = self.graph.add_vertex(page.link, page=page, visited=False)
         self.registered_pages += 1
         if self.use_lookup is True:
-            self.lookup_table[page] = res
+            self.lookup_table[page.link] = page
         PerformanceCounter.end_metric("add_page")
         return res
 
@@ -40,18 +40,12 @@ class WikipediaMap:
 
     def get_node(self, name):
         PerformanceCounter.start_metric("get_node")
-        if self.use_lookup is True:
-            if name in self.lookup_table:
-                vertex = self.lookup_table[name]
-            else:
-                vertex = None
+        if name in self.lookup_table:
+            page = self.lookup_table[name]
         else:
-            try:
-                vertex = self.graph.vs.find(name=name)
-            except ValueError:
-                vertex = None
+            page = None
         PerformanceCounter.end_metric("get_node")
-        return vertex
+        return page
 
     def get_neighbors(self, vertex, visited=False):
         PerformanceCounter.start_metric("get_neighbors")
