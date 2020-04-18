@@ -4,7 +4,7 @@ from collections import deque
 
 
 class PerformanceCounter:
-    metrics = None
+    metrics = []
     metric = {}
 
     @classmethod
