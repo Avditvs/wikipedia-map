@@ -1,7 +1,4 @@
 from wikipemap.page import Page
-import requests
-from wikipemap.perf_counter import PerformanceCounter
-from lxml import html
 from collections import deque
 
 DEPTH = 1
@@ -12,10 +9,10 @@ def explore(wmap, page, depth=10, duplicate=False):
     if page.vertex["visited"] is False:
         page.make_request()
         page.make_page_links()
-        wmap.set_visited(page.vertex)
+        page.set_visited()
         page.process_links()
         if depth > 0:
-            for neighbor in wmap.get_neighbors(page.vertex, visited=False):
+            for neighbor in wmap.get_neighbors(page, visited=False):
                 explore(
                     wmap, neighbor["page"], depth=depth - 1,
                 )
@@ -27,15 +24,11 @@ def explore_ring(queue, page, n_sites, duplicate=False):
         link = queue.pop()
         if link.vertex["visited"] is False:
             link.make_request()
-            PerformanceCounter.start_metric("parse")
             link.make_page_links()
-            PerformanceCounter.end_metric("parse")
             n += 1
-            link.graph.set_visited(link.vertex)
+            link.set_visited()
             link.process_links()
-            for neighbor in link.graph.get_neighbors(
-                link.vertex, visited=False
-            ):
+            for neighbor in link.graph.get_neighbors(link, visited=False):
                 queue.append(neighbor["page"])
 
 
@@ -47,11 +40,9 @@ def start_exploring(graph, page_name, depth=3, method=DEPTH, n_sites=200):
         queue = deque()
         page = Page(page_name, graph)
         page.make_request()
-        PerformanceCounter.start_metric("parse")
         page.make_page_links()
-        PerformanceCounter.end_metric("parse")
-        graph.set_visited(page.vertex)
+        page.set_visited()
         page.process_links()
-        for neighbor in graph.get_neighbors(page.vertex, visited=False):
+        for neighbor in graph.get_neighbors(page, visited=False):
             queue.append(neighbor["page"])
         explore_ring(queue, page, n_sites)

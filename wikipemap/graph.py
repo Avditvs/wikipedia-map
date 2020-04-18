@@ -26,36 +26,30 @@ class WikipediaMap:
             )
 
     def add_page(self, page):
-        PerformanceCounter.start_metric("add_page")
         res = self.graph.add_vertex(page.link, page=page, visited=False)
         self.registered_pages += 1
-        if self.use_lookup is True:
-            self.lookup_table[page.link] = page
-        PerformanceCounter.end_metric("add_page")
+        self.lookup_table[page.link] = page
         return res
 
-    def add_link(self, source_vertex, target_vertex):
+    def add_link(self, source_page, target_page):
         self.created_links += 1
-        return self.graph.add_edge(source_vertex, target_vertex)
+        return self.graph.add_edge(source_page, target_page)
 
     def get_node(self, name):
         PerformanceCounter.start_metric("get_node")
-        if name in self.lookup_table:
+        try:
             page = self.lookup_table[name]
-        else:
+        except KeyError:
             page = None
         PerformanceCounter.end_metric("get_node")
         return page
 
-    def get_neighbors(self, vertex, visited=False):
+    def get_neighbors(self, page, visited=False):
         PerformanceCounter.start_metric("get_neighbors")
-        neighbors = vertex.neighbors(mode=OUT)
+        neighbors = page.vertex.neighbors(mode=OUT)
         neighbors = [n for n in neighbors if n["visited"] is visited]
         PerformanceCounter.end_metric("get_neighbors")
         return neighbors
-
-    def set_visited(self, vertex):
-        vertex["visited"] = True
 
     def __str__(self):
         return str(self.graph)
