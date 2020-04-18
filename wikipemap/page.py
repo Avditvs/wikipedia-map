@@ -8,39 +8,38 @@ from enum import Enum
 
 class State(Enum):
     NEW = 0
-    FETCHING = 1
-    FETCHED = 2
-    PARSING = 3
-    PARSED = 4
-    COMPLETING = 5
+    ENQUEUED = 1
+    FETCHING = 2
+    FETCHED = 3
+    PARSING = 4
+    PARSED = 5
+    COMPLETING = 6
     COMPLETED = 10
 
 
 class Page:
+    @PerformanceCounter.timed("add_page")
     def __init__(self, link, graph):
-        PerformanceCounter.start_metric("add_page")
         self.link = link
         self.state = State.NEW
         self.locale = "fr"
         self.content = ""
         self.graph = graph
         self.vertex = graph.add_page(self)
-        PerformanceCounter.end_metric("add_page")
 
+    @PerformanceCounter.timed("get")
     def make_request(self):
-        PerformanceCounter.start_metric("get")
         self.state = State.FETCHING
         self.content = requests.get(self._make_request_url()).content
         self.state = State.FETCHED
-        PerformanceCounter.end_metric("get")
 
     def _make_request_url(self):
         return "https://{}.wikipedia.org/wiki/{}".format(
             self.locale, self.link
         )
 
+    @PerformanceCounter.timed("parse")
     def make_page_links(self):
-        PerformanceCounter.start_metric("parse")
         parser = html.fromstring(self.content)
         self.state = State.PARSING
         self.links = set()
@@ -51,10 +50,9 @@ class Page:
             if "#" not in h and ":" not in h and re.match("^/wiki/.*", h):
                 self.links.add(h.split("/")[2])
         self.state = State.PARSED
-        PerformanceCounter.end_metric("parse")
 
+    @PerformanceCounter.timed("process_links")
     def process_links(self):
-        PerformanceCounter.start_metric("process_links")
         self.state = State.COMPLETING
         for link in self.links:
             target_page = self.graph.get_node(link)
@@ -63,7 +61,11 @@ class Page:
             self.graph.add_link(self.vertex, target_page.vertex)
         self.graph.page_explored(self.link)
         self.state = State.COMPLETED
-        PerformanceCounter.end_metric("process_links")
 
     def set_visited(self):
         self.vertex["visited"] = True
+
+    def enqueued(self, queue):
+        if self.state != State.ENQUEUED:
+            self.state = State.ENQUEUED
+            queue.append(self)

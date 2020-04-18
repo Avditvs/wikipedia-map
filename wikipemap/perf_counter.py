@@ -85,3 +85,16 @@ class PerformanceCounter:
             )
 
         print(res)
+
+    @staticmethod
+    def timed(name):
+        def timing(func):
+            def wrapper(*args, **kwargs):
+                PerformanceCounter.start_metric(name)
+                res = func(*args, **kwargs)
+                PerformanceCounter.end_metric(name)
+                return res
+
+            return wrapper
+
+        return timing

@@ -29,7 +29,8 @@ def explore_ring(queue, page, n_sites, duplicate=False):
             link.set_visited()
             link.process_links()
             for neighbor in link.graph.get_neighbors(link, visited=False):
-                queue.append(neighbor["page"])
+                page = neighbor["page"]
+                page.enqueued(queue)
 
 
 def start_exploring(graph, page_name, depth=3, method=DEPTH, n_sites=200):

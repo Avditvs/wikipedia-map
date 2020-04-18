@@ -35,20 +35,18 @@ class WikipediaMap:
         self.created_links += 1
         return self.graph.add_edge(source_page, target_page)
 
+    @PerformanceCounter.timed('get_node')
     def get_node(self, name):
-        PerformanceCounter.start_metric("get_node")
         try:
             page = self.lookup_table[name]
         except KeyError:
             page = None
-        PerformanceCounter.end_metric("get_node")
         return page
 
+    @PerformanceCounter.timed('get_neighbors')
     def get_neighbors(self, page, visited=False):
-        PerformanceCounter.start_metric("get_neighbors")
         neighbors = page.vertex.neighbors(mode=OUT)
         neighbors = [n for n in neighbors if n["visited"] is visited]
-        PerformanceCounter.end_metric("get_neighbors")
         return neighbors
 
     def __str__(self):
