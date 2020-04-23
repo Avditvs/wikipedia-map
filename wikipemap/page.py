@@ -80,4 +80,4 @@ class Page:
     def enqueued(self, queue):
         if self.state != State.ENQUEUED:
             self.state = State.ENQUEUED
-            queue.append(self)
+            queue.put(self)
