@@ -26,7 +26,7 @@ class WikipediaMap:
             )
 
     def add_page(self, page):
-        res = self.graph.add_vertex(page.link, page=page, visited=False)
+        res = self.graph.add_vertex(page=page)
         self.registered_pages += 1
         self.lookup_table[page.link] = page
         return res
@@ -35,8 +35,8 @@ class WikipediaMap:
         self.created_links += 1
         return self.graph.add_edge(source_page, target_page)
 
-    def add_links(self, es):
-        self.created_links += len(es)
+    def add_links(self, gen_len, es):
+        self.created_links += gen_len
         return self.graph.add_edges(es)
 
     @PerformanceCounter.timed("get_node")
