@@ -1,10 +1,12 @@
 import urllib.parse as urlparse
 import re
-import requests
-from lxml import html
 from wikipemap.perf_counter import PerformanceCounter
 from enum import Enum
 from igraph import OUT
+
+HTML_TAG_REGEX = re.compile(
+    r"<a href=([\'\"])(\/wiki\/)([^:#]*?)\1", re.IGNORECASE
+)
 
 
 class State(Enum):
@@ -37,9 +39,9 @@ class Page:
         self.vertex["visited"] = visited
 
     @PerformanceCounter.timed("get")
-    def make_request(self):
+    def make_request(self, session):
         self.state = State.FETCHING
-        self.content = requests.get(self._make_request_url()).content
+        self.content = session.get(self._make_request_url()).text
         self.state = State.FETCHED
 
     def _make_request_url(self):
@@ -50,24 +52,23 @@ class Page:
     @PerformanceCounter.timed("parse")
     def make_page_links(self):
         self.state = State.PARSING
-        parser = html.fromstring(self.content)
         self.links = set()
-        for h in parser.xpath(
-            "//div[@id = '{}']//a/@href".format("mw-content-text")
-        ):
-            h = urlparse.unquote(h)
-            if "#" not in h and ":" not in h and re.match("^/wiki/.*", h):
-                self.links.add(h.split("/")[2])
+        for h in HTML_TAG_REGEX.findall(self.content):
+            h = urlparse.unquote(h[2])
+            self.links.add(h)
+        self.content = None
         self.state = State.PARSED
 
     @PerformanceCounter.timed("process_links")
     def process_links(self):
         self.state = State.COMPLETING
+        es = []
         for link in self.links:
             target_page = self.graph.get_node(link)
             if not target_page:
                 target_page = Page(link, self.graph)
-            self.graph.add_link(self.vertex, target_page.vertex)
+            es.append((self.vertex, target_page.vertex))
+        self.graph.add_links(es)
         self.graph.page_explored(self.link)
         self.state = State.COMPLETED
 

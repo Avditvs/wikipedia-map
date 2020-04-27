@@ -7,7 +7,6 @@ authors = ["Germain Louis <germain.louis.80@gmail.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 python-igraph = "^0.8.0"
-lxml = "^4.5.0"
 pycairo = "^1.19.1"
 cairocffi = "^1.1.0"
 

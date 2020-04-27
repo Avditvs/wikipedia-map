@@ -17,7 +17,7 @@ class WikipediaMap:
 
     def page_explored(self, page_name):
         self.explored_pages += 1
-        if self.verbose is True:
+        if self.explored_pages % 100 == 0 and self.verbose is True:
             clear_output()
             display(
                 "Explored pages :{}, Registered pages :{}, Last : {}".format(
@@ -34,6 +34,10 @@ class WikipediaMap:
     def add_link(self, source_page, target_page):
         self.created_links += 1
         return self.graph.add_edge(source_page, target_page)
+
+    def add_links(self, es):
+        self.created_links += len(es)
+        return self.graph.add_edges(es)
 
     @PerformanceCounter.timed("get_node")
     def get_node(self, name):
