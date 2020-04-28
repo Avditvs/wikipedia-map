@@ -2,7 +2,6 @@ import urllib.parse as urlparse
 import re
 from wikipemap.perf_counter import PerformanceCounter
 from enum import Enum
-from igraph import OUT
 
 HTML_TAG_REGEX = re.compile(
     r"<a href=([\'\"])(\/wiki\/)([^:#]*?)\1", re.IGNORECASE
@@ -29,14 +28,7 @@ class Page:
         self.content = ""
         self.graph = graph
         self.vertex = graph.add_page(self)
-
-    @property
-    def visited(self):
-        return self.vertex["visited"]
-
-    @visited.setter
-    def visited(self, visited):
-        self.vertex["visited"] = visited
+        self.visited = False
 
     @PerformanceCounter.timed("get")
     def make_request(self, session):
@@ -52,31 +44,40 @@ class Page:
     @PerformanceCounter.timed("parse")
     def make_page_links(self):
         self.state = State.PARSING
-        self.links = set()
-        for h in HTML_TAG_REGEX.findall(self.content):
-            h = urlparse.unquote(h[2])
-            self.links.add(h)
+        try:
+            self.links = {
+                urlparse.unquote(h[2])
+                for h in HTML_TAG_REGEX.findall(self.content)
+            }
+        except TypeError:
+            print(self.link)
+            raise TypeError()
         self.content = None
         self.state = State.PARSED
 
     @PerformanceCounter.timed("process_links")
     def process_links(self):
         self.state = State.COMPLETING
-        es = []
-        for link in self.links:
-            target_page = self.graph.get_node(link)
-            if not target_page:
-                target_page = Page(link, self.graph)
-            es.append((self.vertex, target_page.vertex))
-        self.graph.add_links(es)
+
+        def target_generator():
+            for link in self.links:
+                v = self.graph.get_node(link)
+                yield (
+                    self.vertex,
+                    v.vertex if v else Page(link, self.graph).vertex,
+                )
+
+        self.graph.add_links(target_generator())
         self.graph.page_explored(self.link)
         self.state = State.COMPLETED
 
     @PerformanceCounter.timed("get_neighbors")
     def get_neighbors(self, visited=False):
-        neighbors = self.vertex.neighbors(mode=OUT)
-        neighbors = [n["page"] for n in neighbors if n["visited"] is visited]
-        return neighbors
+        return [
+            self.graph.page_prop[n]
+            for n in self.vertex.out_neighbors()
+            if self.graph.page_prop[n].visited is visited
+        ]
 
     def enqueued(self, queue):
         if self.state != State.ENQUEUED:

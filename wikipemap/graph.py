@@ -1,19 +1,25 @@
-from igraph import Graph
 from IPython.display import display, clear_output
 from wikipemap.perf_counter import PerformanceCounter
+import graph_tool as gt
 
 
 class WikipediaMap:
     def __init__(self, name, verbose=True, use_lookup=True):
-        self.graph = Graph(directed=True)
+        self.graph = gt.Graph(directed=True)
+        self.page_prop = self.graph.new_vertex_property("object")
         self.name = name
-        self.graph["name"] = name
         self.explored_pages = 0
-        self.registered_pages = 0
         self.verbose = verbose
-        self.created_links = 0
         self.use_lookup = use_lookup
         self.lookup_table = {}
+
+    @property
+    def created_links(self):
+        return self.graph.num_edges()
+
+    @property
+    def registered_pages(self):
+        return self.graph.num_vertices()
 
     def page_explored(self, page_name):
         self.explored_pages += 1
@@ -26,18 +32,17 @@ class WikipediaMap:
             )
 
     def add_page(self, page):
-        res = self.graph.add_vertex(page.link, page=page, visited=False)
-        self.registered_pages += 1
+        res = self.graph.add_vertex()
+        self.page_prop[res] = page
         self.lookup_table[page.link] = page
         return res
 
     def add_link(self, source_page, target_page):
-        self.created_links += 1
         return self.graph.add_edge(source_page, target_page)
 
+    @PerformanceCounter.timed("add_links")
     def add_links(self, es):
-        self.created_links += len(es)
-        return self.graph.add_edges(es)
+        return self.graph.add_edge_list(es)
 
     @PerformanceCounter.timed("get_node")
     def get_node(self, name):

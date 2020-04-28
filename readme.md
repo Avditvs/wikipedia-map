@@ -2,9 +2,17 @@
 
 The goal of this project is to create a map of the wikipedia articles and how they are linked together.
 
+## Graph library move from igraph to graph-tool
+The project changed of librairy for handleling graph because:
+- graph-tool has a better documentation
+- igraph is slower
+
+We are able to reach about 10K wikipedia pages download/parsing/graph addition per minute !
+
 ## External Dependancies:
-- libxml2
-- libxslt
+- graph-tool
+
+Graph tool is hard to install in a virtual envoronment so you can install it with your system package manager and symlink it the installation folder of this module to the site-packages folder of your virtual env.
 
 ## Todo
 - [x] Wikipedia web scraping
