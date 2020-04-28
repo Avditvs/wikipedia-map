@@ -1,16 +1,14 @@
 from threading import Thread, Event
 from wikipemap.page import State, Page
-from queue import Queue
+from queue import Queue, Empty
 import time
 from requests import Session
 
 
 class HTTPRequestsWorker(Thread):
-    def __init__(
-        self, download_queue, process_queue, session, num_requests=100
-    ):
+    def __init__(self, download_queue, process_queue, num_requests=100):
         super(HTTPRequestsWorker, self).__init__()
-        self.session = session
+        self.session = Session()
         self.download_queue = download_queue
         self.process_queue = process_queue
         self.num_requests = num_requests
@@ -19,12 +17,13 @@ class HTTPRequestsWorker(Thread):
 
     def run(self):
         self.refill = True
-        while not self.download_queue.empty() and self.n < self.num_requests:
+        while not self.download_queue.empty() and self.n <= self.num_requests:
             link = self.download_queue.get()
             if link.state == State.ENQUEUED:
                 self.n += 1
                 link.make_request(self.session)
                 self.process_queue.put(link)
+        self.session.close()
 
 
 class LinksProcessingWorker(Thread):
@@ -39,13 +38,16 @@ class LinksProcessingWorker(Thread):
         self.stop_event.set()
 
     def run(self):
-        while not self.stop_event.isSet() or not self.process_queue.empty():
-            link = self.process_queue.get()
-            link.make_page_links()
-            link.process_links()
-            link.visited = True
-            for neighbor in link.get_neighbors(visited=False):
-                neighbor.enqueued(self.download_queue)
+        try:
+            while not self.stop_event.isSet():
+                link = self.process_queue.get(timeout=1)
+                link.make_page_links()
+                link.process_links()
+                link.visited = True
+                for neighbor in link.get_neighbors(visited=False):
+                    neighbor.enqueued(self.download_queue)
+        except Empty:
+            pass
 
 
 def start_exploring(
@@ -72,7 +74,6 @@ def start_exploring(
         HTTPRequestsWorker(
             download_queue,
             process_queue,
-            session,
             num_requests=n_sites // n_download_threads,
         )
         for i in range(n_download_threads)

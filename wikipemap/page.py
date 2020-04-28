@@ -2,8 +2,6 @@ import urllib.parse as urlparse
 import re
 from wikipemap.perf_counter import PerformanceCounter
 from enum import Enum
-from igraph import OUT
-import graph_tool as gt
 
 HTML_TAG_REGEX = re.compile(
     r"<a href=([\'\"])(\/wiki\/)([^:#]*?)\1", re.IGNORECASE
@@ -46,11 +44,14 @@ class Page:
     @PerformanceCounter.timed("parse")
     def make_page_links(self):
         self.state = State.PARSING
-        self.links = set()
-        self.links = {
-            urlparse.unquote(h[2])
-            for h in HTML_TAG_REGEX.findall(self.content)
-        }
+        try:
+            self.links = {
+                urlparse.unquote(h[2])
+                for h in HTML_TAG_REGEX.findall(self.content)
+            }
+        except TypeError:
+            print(self.link)
+            raise TypeError()
         self.content = None
         self.state = State.PARSED
 
@@ -60,14 +61,13 @@ class Page:
 
         def target_generator():
             for link in self.links:
+                v = self.graph.get_node(link)
                 yield (
                     self.vertex,
-                    self.graph.get_node(link).vertex
-                    if self.graph.get_node(link)
-                    else Page(link, self.graph).vertex,
+                    v.vertex if v else Page(link, self.graph).vertex,
                 )
 
-        self.graph.add_links(len(self.links), target_generator())
+        self.graph.add_links(target_generator())
         self.graph.page_explored(self.link)
         self.state = State.COMPLETED
 
