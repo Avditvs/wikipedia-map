@@ -3,6 +3,7 @@ import re
 from wikipemap.perf_counter import PerformanceCounter
 from enum import Enum
 from igraph import OUT
+import graph_tool as gt
 
 HTML_TAG_REGEX = re.compile(
     r"<a href=([\'\"])(\/wiki\/)([^:#]*?)\1", re.IGNORECASE
@@ -73,9 +74,9 @@ class Page:
     @PerformanceCounter.timed("get_neighbors")
     def get_neighbors(self, visited=False):
         return [
-            n["page"]
-            for n in self.vertex.neighbors(mode=OUT)
-            if n["page"].visited is visited
+            self.graph.page_prop[n]
+            for n in self.vertex.out_neighbors()
+            if self.graph.page_prop[n].visited is visited
         ]
 
     def enqueued(self, queue):

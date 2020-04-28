@@ -1,13 +1,14 @@
 from igraph import Graph
 from IPython.display import display, clear_output
 from wikipemap.perf_counter import PerformanceCounter
+import graph_tool as gt
 
 
 class WikipediaMap:
     def __init__(self, name, verbose=True, use_lookup=True):
-        self.graph = Graph(directed=True)
+        self.graph = gt.Graph(directed=True)
+        self.page_prop = self.graph.new_vertex_property("object")
         self.name = name
-        self.graph["name"] = name
         self.explored_pages = 0
         self.registered_pages = 0
         self.verbose = verbose
@@ -26,7 +27,8 @@ class WikipediaMap:
             )
 
     def add_page(self, page):
-        res = self.graph.add_vertex(page=page)
+        res = self.graph.add_vertex()
+        self.page_prop[res] = page
         self.registered_pages += 1
         self.lookup_table[page.link] = page
         return res
@@ -37,7 +39,7 @@ class WikipediaMap:
 
     def add_links(self, gen_len, es):
         self.created_links += gen_len
-        return self.graph.add_edges(es)
+        return self.graph.add_edge_list(es)
 
     @PerformanceCounter.timed("get_node")
     def get_node(self, name):

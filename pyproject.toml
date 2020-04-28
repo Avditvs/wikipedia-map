@@ -9,6 +9,8 @@ python = "^3.8"
 python-igraph = "^0.8.0"
 pycairo = "^1.19.1"
 cairocffi = "^1.1.0"
+numpy = "^1.18.3"
+scipy = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
 jupyterlab = "^2.1.0"
