@@ -2,7 +2,7 @@
 
 The goal of this project is to create a map of the wikipedia articles and how they are linked together.
 
-## Graph librairy move from igraph to graph-tool
+## Graph library move from igraph to graph-tool
 The project changed of librairy for handleling graph because:
 - graph-tool has a better documentation
 - igraph is slower
